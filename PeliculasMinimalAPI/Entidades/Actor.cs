@@ -1,4 +1,4 @@
-﻿namespace PeliculasMinimalAPI.Utilidades
+﻿namespace PeliculasMinimalAPI.Entidades
 {
     public class Actor
     {

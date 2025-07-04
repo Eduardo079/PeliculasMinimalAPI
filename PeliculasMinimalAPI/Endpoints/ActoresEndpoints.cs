@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
 using PeliculasMinimalAPI.DTOs;
+using PeliculasMinimalAPI.Entidades;
 using PeliculasMinimalAPI.Repositorio;
 using PeliculasMinimalAPI.Servicios;
-using PeliculasMinimalAPI.Utilidades;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
@@ -21,7 +21,7 @@ namespace PeliculasMinimalAPI.Endpoints
             group.MapGet("/{id:int}", ObtenerActoresById);
             group.MapGet("obtenerPorNombre/{nombre}", ObtenerActoresPorNombre);
             group.MapPost("/", Crear).DisableAntiforgery();
-            group.MapPut("/{id:int}", Actualizar);
+            group.MapPut("/{id:int}", Actualizar).DisableAntiforgery();
             group.MapDelete("/{id:int}", Borrar);
 
             return group;
@@ -69,7 +69,9 @@ namespace PeliculasMinimalAPI.Endpoints
             return TypedResults.Created($"/actores/{id}", actorDTOs);
         }
 
-        static async Task<Results<NoContent, NotFound>> Actualizar(int id,[FromForm] CrearActorDTOs crearActorDTOs, IRepositorioActores repositorio, IAlmacenadorArchivos almacenadorArchivos ,IOutputCacheStore outputCacheStore, IMapper mapper)
+        static async Task<Results<NoContent, NotFound>> Actualizar(int id,
+            [FromForm] CrearActorDTOs crearActorDTOs, IRepositorioActores repositorio,
+            IAlmacenadorArchivos almacenadorArchivos, IOutputCacheStore outputCacheStore, IMapper mapper)
         {
             var actorDB = await repositorio.ObtenerPorId(id);
 
@@ -78,19 +80,22 @@ namespace PeliculasMinimalAPI.Endpoints
                 return TypedResults.NotFound();
             }
 
-            var actorParaActualizas = mapper.Map<Actor>(crearActorDTOs);
-            actorParaActualizas.Foto = actorDB.Foto;
+            var actorParaActualizar = mapper.Map<Actor>(crearActorDTOs);
+            actorParaActualizar.Id = id;
+            actorParaActualizar.Foto = actorDB.Foto;
 
-            if(crearActorDTOs.Foto is not null)
+            if (crearActorDTOs.Foto is not null)
             {
-                var url = almacenadorArchivos.Editar(actorParaActualizas.Foto, contenedor, crearActorDTOs.Foto);
+                var url = await almacenadorArchivos.Editar(actorParaActualizar.Foto,
+                    contenedor, crearActorDTOs.Foto);
+                actorParaActualizar.Foto = url;
             }
 
-            actorParaActualizas.Id = id;
-            await repositorio.Actualizar(actorParaActualizas);
+            await repositorio.Actualizar(actorParaActualizar);
             await outputCacheStore.EvictByTagAsync("actores-get", default);
             return TypedResults.NoContent();
         }
+
 
 
         static async Task<Results<NoContent, NotFound>> Borrar(int id, IRepositorioActores repositorioActores, IOutputCacheStore outputCacheStore)

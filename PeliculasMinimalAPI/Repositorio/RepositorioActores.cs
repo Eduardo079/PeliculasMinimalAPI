@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PeliculasMinimalAPI.DTOs;
+using PeliculasMinimalAPI.Entidades;
 using PeliculasMinimalAPI.Utilidades;
 
 namespace PeliculasMinimalAPI.Repositorio
@@ -24,7 +25,7 @@ namespace PeliculasMinimalAPI.Repositorio
 
         public async Task<Actor?> ObtenerPorId(int id)
         {
-            return await context.Actores.FirstOrDefaultAsync(a => a.Id == id);
+            return await context.Actores.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
         }
 
         public async Task<List<Actor>> ObtenerPorNombre(string nombre)

@@ -1,5 +1,5 @@
 ﻿using PeliculasMinimalAPI.DTOs;
-using PeliculasMinimalAPI.Utilidades;
+using PeliculasMinimalAPI.Entidades;
 
 namespace PeliculasMinimalAPI.Repositorio
 {
