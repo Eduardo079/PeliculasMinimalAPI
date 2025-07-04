@@ -98,14 +98,15 @@ namespace PeliculasMinimalAPI.Endpoints
 
 
 
-        static async Task<Results<NoContent, NotFound>> Borrar(int id, IRepositorioActores repositorioActores, IOutputCacheStore outputCacheStore)
+        static async Task<Results<NoContent, NotFound>> Borrar(int id, IRepositorioActores repositorioActores, IOutputCacheStore outputCacheStore, IAlmacenadorArchivos almacenadorArchivos)
         {
-            var existe = await repositorioActores.Existe(id);
-            if (!existe)
+            var actorDB = await repositorioActores.ObtenerPorId(id);
+            if (actorDB is null)
             {
                 return TypedResults.NotFound();
             }
             await repositorioActores.Borrar(id);
+            await almacenadorArchivos.Borrar(actorDB.Foto, contenedor);
             await outputCacheStore.EvictByTagAsync("actores-get", default);
             return TypedResults.NoContent();
         }
