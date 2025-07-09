@@ -14,10 +14,31 @@ namespace PeliculasMinimalAPI.Endpoints
         private static readonly string contenedor = "pelicula";
         public static RouteGroupBuilder MapPeliculas(this RouteGroupBuilder group)
         {
+            group.MapGet("/", Obtener).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("peliculas-get"));
+            group.MapGet("/{id:int}",ObtenerPorId).DisableAntiforgery();
             group.MapPost("/", Crear).DisableAntiforgery();
             return group;
         }
 
+        static async Task<Ok<List<PeliculaDTOs>>> Obtener(IRepositorioPeliculas repositorio, IMapper mapper, int pagina = 1, int recordspaginacion = 10)
+        {
+             var paginacion  = new PaginacionDTOs { Pagina = pagina, RecordsPorPagina = recordspaginacion };
+            var peliculas = await repositorio.ObtenerTodos(paginacion);
+            var peliculasDTOs = mapper.Map<List<PeliculaDTOs>>(peliculas);
+            return TypedResults.Ok(peliculasDTOs);
+        }
+
+        static async Task<Results<Ok<PeliculaDTOs>, NotFound>> ObtenerPorId (int id, IRepositorioPeliculas repositorio, IMapper mapper)
+        {
+            var pelicula = await repositorio.ObtenerPorId(id);
+            if(pelicula == null)
+            {
+                return TypedResults.NotFound();
+            }
+            var peliculasDTOs = mapper.Map<PeliculaDTOs>(pelicula);
+            return TypedResults.Ok(peliculasDTOs);
+
+        }
         static async Task<Created<PeliculaDTOs>> Crear([FromForm] CrearPeliculasDTOs crearPeliculasDTOs, IRepositorioPeliculas repositorio,
             IAlmacenadorArchivos almacenadorArchivos, IOutputCacheStore outputCacheStore, IMapper mapper)
         {

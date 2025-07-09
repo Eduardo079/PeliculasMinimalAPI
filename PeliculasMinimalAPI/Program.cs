@@ -62,7 +62,7 @@ app.UseSwaggerUI();
 app.UseStaticFiles();
 
 app.UseCors();
-
+ 
 app.UseOutputCache();
 app.MapGet("/", () => "Hello World!");
 
