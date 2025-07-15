@@ -3,7 +3,7 @@ using PeliculasMinimalAPI.Entidades;
 
 namespace PeliculasMinimalAPI.Repositorio
 {
-    public class RepositorioComentarios
+    public class RepositorioComentarios : IRepositorioComentarios
     {
         private readonly ApplicationDBContext context;
 
@@ -32,14 +32,14 @@ namespace PeliculasMinimalAPI.Repositorio
 
         public async Task<bool> Existe(int id)
         {
-            return  await context.Comentarios.AnyAsync(c => c.Id == id);
+            return await context.Comentarios.AnyAsync(c => c.Id == id);
         }
 
         public async Task Actualizar(Comentario comentario)
         {
             context.Update(comentario);
             await context.SaveChangesAsync();
-            
+
         }
 
         public async Task Borrar(int id)
