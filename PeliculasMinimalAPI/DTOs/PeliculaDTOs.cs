@@ -1,4 +1,6 @@
-﻿namespace PeliculasMinimalAPI.DTOs
+﻿using PeliculasMinimalAPI.Entidades;
+
+namespace PeliculasMinimalAPI.DTOs
 {
     public class PeliculaDTOs
     {
@@ -7,5 +9,7 @@
         public string EnCines { get; set; }
         public DateTime FechaLanzamineto { get; set; }
         public string? Poster { get; set; }
+
+        public List<Comentario> Comentarios { get; set; } = new List<Comentario>();
     }
 }
