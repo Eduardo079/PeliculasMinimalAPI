@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
 using PeliculasMinimalAPI.DTOs;
 using PeliculasMinimalAPI.Entidades;
+using PeliculasMinimalAPI.Filtros;
 using PeliculasMinimalAPI.Repositorio;
 using PeliculasMinimalAPI.Servicios;
 using System.Runtime.CompilerServices;
@@ -17,11 +19,11 @@ namespace PeliculasMinimalAPI.Endpoints
         private static readonly string contenedor = "actores";
         public static RouteGroupBuilder MapActores(this RouteGroupBuilder group)
         {
-            group.MapGet("/", ObtenerActores).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actores-get"));
+            group.MapGet("/", ObtenerActores);//.CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actores-get"));
             group.MapGet("/{id:int}", ObtenerActoresById);
             group.MapGet("obtenerPorNombre/{nombre}", ObtenerActoresPorNombre);
-            group.MapPost("/", Crear).DisableAntiforgery();
-            group.MapPut("/{id:int}", Actualizar).DisableAntiforgery();
+            group.MapPost("/", Crear).DisableAntiforgery().AddEndpointFilter<FiltroValidaciones<CrearActorDTOs>>();
+            group.MapPut("/{id:int}", Actualizar).DisableAntiforgery().AddEndpointFilter<FiltroValidaciones<CrearActorDTOs>>();
             group.MapDelete("/{id:int}", Borrar);
 
             return group;
@@ -53,8 +55,11 @@ namespace PeliculasMinimalAPI.Endpoints
             return TypedResults.Ok(actorDTOs);
         }
 
-        static async Task<Created<ActorDTOs>> Crear([FromForm] CrearActorDTOs crearActorDTOs, IRepositorioActores repositorio, IOutputCacheStore outputCacheStore, IMapper mapper, IAlmacenadorArchivos almacenadorArchivos)
+        static async Task<Results<Created<ActorDTOs>, ValidationProblem>> Crear([FromForm] CrearActorDTOs crearActorDTOs, IRepositorioActores repositorio,
+            IOutputCacheStore outputCacheStore, IMapper mapper, IAlmacenadorArchivos almacenadorArchivos)
         {
+           
+
             var actor = mapper.Map<Actor>(crearActorDTOs);
 
             if (crearActorDTOs.Foto is not null)

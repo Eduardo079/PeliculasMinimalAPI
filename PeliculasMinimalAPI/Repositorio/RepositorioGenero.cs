@@ -32,6 +32,11 @@ namespace PeliculasMinimalAPI.Repositorio
             return await context.Generos.AnyAsync(o => o.Id == id);
         }
 
+        public async Task<bool> Existe(int id, string nombre)
+        {
+            return await context.Generos.AnyAsync(g => g.Id != id && g.Nombre == nombre);
+        }
+
         public async Task<List<int>> Existen(List<int> ids)
         {
             return await context.Generos.Where(c =>  ids.Contains(c.Id)).Select(c => c.Id).ToListAsync();
