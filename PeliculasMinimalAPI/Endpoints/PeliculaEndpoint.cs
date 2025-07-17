@@ -18,8 +18,10 @@ namespace PeliculasMinimalAPI.Endpoints
             group.MapGet("/", Obtener).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("peliculas-get"));
             group.MapGet("/{id:int}", ObtenerPorId).DisableAntiforgery();
             group.MapPost("/", Crear).DisableAntiforgery();
-            group.MapPut("/{id:int}",Actualizar).DisableAntiforgery();
+            group.MapPut("/{id:int}", Actualizar).DisableAntiforgery();
             group.MapDelete("/{id:int}", Borrar);
+            group.MapPost("/{id:int}/asignargeneros", AsignarGeneros);
+            group.MapPost("/{id:int}/asignaractores", AsignarActores);
             return group;
         }
 
@@ -87,7 +89,7 @@ namespace PeliculasMinimalAPI.Endpoints
         static async Task<Results<NoContent, NotFound>> Borrar(int id, IRepositorioPeliculas repositorio, IAlmacenadorArchivos almacenadorArchivos, IOutputCacheStore outputCacheStore, IMapper mapper)
         {
             var eliminarPelicula = await repositorio.ObtenerPorId(id);
-            if(eliminarPelicula is null)
+            if (eliminarPelicula is null)
             {
                 return TypedResults.NoContent();
             }
@@ -95,6 +97,53 @@ namespace PeliculasMinimalAPI.Endpoints
             await repositorio.Borrar(id);
             await almacenadorArchivos.Borrar(eliminarPelicula.Poster, contenedor);
             await outputCacheStore.EvictByTagAsync("peliculas-get", default);
+            return TypedResults.NoContent();
+        }
+
+        static async Task<Results<NoContent, NotFound, BadRequest<string>>> AsignarGeneros(int id, List<int> generoIds, IRepositorioPeliculas repositorioPeliculas, IRepositorioGeneros repositorioGeneros)
+        {
+            if (!await repositorioPeliculas.Existe(id))
+            {
+                return TypedResults.NotFound();
+            }
+
+            var generosExistentes = new List<int>();
+
+            if (generoIds.Count != 0)
+            {
+                generosExistentes = await repositorioGeneros.Existen(generoIds);
+            }
+
+            if (generosExistentes.Count != generoIds.Count)
+            {
+                var generoNoExistentes = generoIds.Except(generosExistentes);
+
+                return TypedResults.BadRequest($"Los géneros con ID {string.Join(", ", generoNoExistentes)} no existen.");
+            }
+            await repositorioPeliculas.AsignarGeneros(id, generoIds);
+            return TypedResults.NoContent();
+        }
+
+        static async Task<Results<NoContent, NotFound, BadRequest<string>>> AsignarActores(int id, List<AsignarActorPeliculaDTOs> actoresDTO, IRepositorioPeliculas repositorioPeliculas, IRepositorioActores repositorioActores, IMapper mapper)
+        {
+            if (!await repositorioPeliculas.Existe(id)) { return TypedResults.NotFound(); }
+
+            var actoresExisten = new List<int>();
+            var actoresIds = actoresDTO.Select(a => a.ActorId).ToList();
+
+            if(actoresDTO.Count != 0)
+            {
+                actoresExisten = await repositorioActores.Existen(actoresIds);
+            }
+
+            if (actoresExisten.Count != actoresDTO.Count)
+            {
+                var actoresNoExisten = actoresIds.Except(actoresExisten);
+                return TypedResults.BadRequest($" Los actores con Id {string.Join(", ", actoresNoExisten)} No existen");
+            }
+
+            var actores = mapper.Map<List<ActorPelicula>>(actoresDTO);
+            await repositorioPeliculas.AsignarActores(id, actores);
             return TypedResults.NoContent();
         }
     }
