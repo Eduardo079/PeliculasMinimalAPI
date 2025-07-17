@@ -11,5 +11,8 @@ namespace PeliculasMinimalAPI.DTOs
         public string? Poster { get; set; }
 
         public List<Comentario> Comentarios { get; set; } = new List<Comentario>();
+
+        public List<GeneroDTOs> Genero { get; set; } = new List<GeneroDTOs>();
+        public List<ActorPeliculaDTOs> Actores { get; set; } = new List<ActorPeliculaDTOs>();
     }
 }
